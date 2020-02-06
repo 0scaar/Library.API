@@ -1,5 +1,6 @@
-using CourseLibrary.API.DbContexts;
-using CourseLibrary.API.Services;
+using AutoMapper;
+using Library.API.DbContexts;
+using Library.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -7,8 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 
-namespace CourseLibrary.API
+namespace Library.API
 {
     public class Startup
     {
@@ -22,8 +24,16 @@ namespace CourseLibrary.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-           services.AddControllers();
-             
+            services.AddControllers(setupAction =>
+            {
+                // TRUE: if the format is incorrect, Operation Status will be 406
+                setupAction.ReturnHttpNotAcceptable = true;
+            })
+            // Accept : application/xml (Header)
+            .AddXmlDataContractSerializerFormatters();
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();
 
             services.AddDbContext<CourseLibraryContext>(options =>

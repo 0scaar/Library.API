@@ -32,6 +32,7 @@ namespace Library.API
             // Accept : application/xml (Header)
             .AddXmlDataContractSerializerFormatters();
 
+            // Configuration of AutoMapper
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             services.AddScoped<ICourseLibraryRepository, CourseLibraryRepository>();

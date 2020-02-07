@@ -51,6 +51,19 @@ namespace Library.API
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                // if the server is offline, the API will return the following message : StatusCode : 500
+                // Properties of project -> Debug -> Environment : Production 
+                app.UseExceptionHandler(appBuilder =>
+                {
+                    appBuilder.Run(async context =>
+                    {
+                        context.Response.StatusCode = 500;
+                        await context.Response.WriteAsync("An unexpected fault happened. Try again later.");
+                    });
+                });
+            }
 
             app.UseRouting();
 

@@ -69,5 +69,12 @@ namespace Library.API.Controllers
                 new { authorId = authorToReturn.Id },
                 authorToReturn);
         }
+
+        [HttpOptions]
+        public IActionResult GetAuthorOptions()
+        {
+            Response.Headers.Add("Allow", "GET, OPTIONS, POST");
+            return Ok();
+        }
     }
 }

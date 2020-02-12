@@ -86,6 +86,10 @@ namespace Library.API.Controllers
             _mapper.Map(course, courseForAuthorFromRepo);
 
             _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
+
+            _courseLibraryRepository.Save();
+
+            return NoContent();
         }
     }
 }

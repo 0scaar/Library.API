@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Library.API.Models;
 using Library.API.Services;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -100,6 +101,31 @@ namespace Library.API.Controllers
 
             _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
 
+            _courseLibraryRepository.Save();
+
+            return NoContent();
+        }
+
+        [HttpPatch("{courseId}")]
+        public ActionResult PartiallyUpdateCourseForAuthor(Guid authorId, Guid courseId,
+            JsonPatchDocument<CourseForUpdateDto> patchDocument)
+        {
+            if (!_courseLibraryRepository.AuthorExists(authorId))
+                return NotFound();
+
+            var courseForAuthorFromRepo = _courseLibraryRepository.GetCourse(authorId, courseId);
+
+            if (courseForAuthorFromRepo == null)
+                return NotFound();
+
+            var courseToPath = _mapper.Map<CourseForUpdateDto>(courseForAuthorFromRepo);
+
+            // add validation
+            patchDocument.ApplyTo(courseToPath);
+
+            _mapper.Map(courseToPath, courseForAuthorFromRepo);
+
+            _courseLibraryRepository.UpdateCourse(courseForAuthorFromRepo);
             _courseLibraryRepository.Save();
 
             return NoContent();

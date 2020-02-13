@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using Newtonsoft.Json.Serialization;
 
 namespace Library.API
 {
@@ -30,7 +31,12 @@ namespace Library.API
                 // TRUE: if the format is incorrect, Operation Status will be 406
                 setupAction.ReturnHttpNotAcceptable = true;
             })
-            // Accept : application/xml (Header)
+            // Add AddNewtonsoftJson to the IMvcBuilder. Default returns an XML.
+            .AddNewtonsoftJson(setupAction =>
+            {
+                setupAction.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            })
+            // Accept : application/xml (Header). Default returns a Json.
             .AddXmlDataContractSerializerFormatters()
             // Configurating the status code 422 for validation errors
             .ConfigureApiBehaviorOptions(setupAction => 

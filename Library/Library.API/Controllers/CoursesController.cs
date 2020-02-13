@@ -3,6 +3,10 @@ using Library.API.Models;
 using Library.API.Services;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,8 +124,12 @@ namespace Library.API.Controllers
 
             var courseToPath = _mapper.Map<CourseForUpdateDto>(courseForAuthorFromRepo);
 
-            // add validation
-            patchDocument.ApplyTo(courseToPath);
+            // add validation of paramethers of Dto
+            patchDocument.ApplyTo(courseToPath, ModelState);
+
+            // validation of Dto
+            if (!TryValidateModel(courseToPath))
+                return ValidationProblem(ModelState);
 
             _mapper.Map(courseToPath, courseForAuthorFromRepo);
 
@@ -129,6 +137,14 @@ namespace Library.API.Controllers
             _courseLibraryRepository.Save();
 
             return NoContent();
+        }
+
+        public override ActionResult ValidationProblem(
+            [ActionResultObjectValue] ModelStateDictionary modelStateDictionary)
+        {
+            var options = HttpContext.RequestServices.GetRequiredService<IOptions<ApiBehaviorOptions>>();
+
+            return (ActionResult)options.Value.InvalidModelStateResponseFactory(ControllerContext);
         }
     }
 }

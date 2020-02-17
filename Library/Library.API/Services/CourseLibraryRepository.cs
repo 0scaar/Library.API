@@ -1,5 +1,6 @@
 ﻿using Library.API.DbContexts;
 using Library.API.Entities;
+using Library.API.Helpers;
 using Library.API.ResourceParameters;
 using System;
 using System.Collections.Generic;
@@ -123,7 +124,7 @@ namespace Library.API.Services
             return _context.Authors.ToList<Author>();
         }
 
-        public IEnumerable<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
+        public PagedList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters)
         {
             if (authorsResourceParameters == null)
                 throw new ArgumentNullException(nameof(authorsResourceParameters));
@@ -149,10 +150,9 @@ namespace Library.API.Services
                     || a.LastName.Contains(searchQuery));
             }
 
-            return collection
-                .Skip(authorsResourceParameters.PageSize * (authorsResourceParameters.PageNumber - 1))
-                .Take(authorsResourceParameters.PageSize)
-                .ToList();
+            return PagedList<Author>.Create(collection,
+                authorsResourceParameters.PageNumber,
+                authorsResourceParameters.PageSize);
         }
 
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds)

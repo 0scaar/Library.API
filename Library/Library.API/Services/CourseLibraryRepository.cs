@@ -1,6 +1,7 @@
 ﻿using Library.API.DbContexts;
 using Library.API.Entities;
 using Library.API.Helpers;
+using Library.API.Models;
 using Library.API.ResourceParameters;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,14 @@ namespace Library.API.Services
     public class CourseLibraryRepository : ICourseLibraryRepository, IDisposable
     {
         private readonly CourseLibraryContext _context;
+        private readonly IPropertyMappingService _propertyMappingService;
 
-        public CourseLibraryRepository(CourseLibraryContext context )
+        public CourseLibraryRepository(CourseLibraryContext context,
+            IPropertyMappingService propertyMappingService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _propertyMappingService = propertyMappingService ??
+                throw new ArgumentNullException(nameof(propertyMappingService));
         }
 
         public void AddCourse(Guid authorId, Course course)
@@ -152,10 +157,12 @@ namespace Library.API.Services
 
             if (!string.IsNullOrWhiteSpace(authorsResourceParameters.OrderBy))
             {
-                if (authorsResourceParameters.OrderBy.ToLowerInvariant() == "name")
-                    collection = collection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
+                // get property mapping dictionary
+                var authorPropertyMappingDictionary = 
+                    _propertyMappingService.GetPropertyMapping<AuthorDto, Author>();
 
-                //collection.ApplySort(authorsResourceParameters.OrderBy, _mappingDictionary);
+                collection = collection.ApplySort(authorsResourceParameters.OrderBy, 
+                    authorPropertyMappingDictionary);
             }
                 
 

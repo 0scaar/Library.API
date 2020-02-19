@@ -155,7 +155,7 @@ namespace Library.API.Services
                 if (authorsResourceParameters.OrderBy.ToLowerInvariant() == "name")
                     collection = collection.OrderBy(a => a.FirstName).ThenBy(a => a.LastName);
 
-                
+                //collection.ApplySort(authorsResourceParameters.OrderBy, _mappingDictionary);
             }
                 
 

@@ -64,6 +64,9 @@ namespace Library.API
             // Register PropertyMappingService
             services.AddTransient<IPropertyMappingService, PropertyMappingService>();
 
+            // Register PropertyCheckerService
+            services.AddTransient<IPropertyCheckerService, PropertyCheckerService>();
+
             // Configuration of AutoMapper
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 

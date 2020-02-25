@@ -115,10 +115,17 @@ namespace Library.API.Controllers
 
             var authorToReturn = _mapper.Map<AuthorDto>(authorEntity);
 
+            var links = CreateLinksForAuthor(authorToReturn.Id, null);
+
+            var linkedResourceToReturn = authorToReturn.ShapeData(null)
+                as IDictionary<string, object>;
+
+            linkedResourceToReturn.Add("links", links);
+
             // return status code : 201 (Created)
             return CreatedAtRoute("GetAuthor",
-                new { authorId = authorToReturn.Id },
-                authorToReturn);
+                new { authorId = linkedResourceToReturn["Id"] },
+                linkedResourceToReturn);
         }
 
         [HttpOptions]

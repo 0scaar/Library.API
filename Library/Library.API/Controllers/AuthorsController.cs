@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Library.API.ResourceParameters;
 using System.Text.Json;
+using Microsoft.Net.Http.Headers;
 
 namespace Library.API.Controllers
 {
@@ -35,14 +36,6 @@ namespace Library.API.Controllers
                 throw new ArgumentNullException(nameof(propertyCheckerService));
         }
 
-        //[HttpGet()]
-        //[HttpHead]
-        //public ActionResult<IEnumerable<AuthorDto>> GetAuthors()
-        //{
-        //    var authorsFromRepo = _courseLibraryRepository.GetAuthors();            
-        //    return Ok(_mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo));
-        //}
-
         [HttpGet(Name = "GetAuthors")]
         [HttpHead]
         public IActionResult GetAuthors(
@@ -58,22 +51,12 @@ namespace Library.API.Controllers
 
             var authorsFromRepo = _courseLibraryRepository.GetAuthors(authorsResourceParameters);
 
-            //var previousPageLink = authorsFromRepo.HasPrevious ?
-            //    CreateAuthorsResourceUri(authorsResourceParameters,
-            //    ResourceUriType.PreviusPage) : null;
-
-            //var nextPageLink = authorsFromRepo.HasNext ?
-            //    CreateAuthorsResourceUri(authorsResourceParameters,
-            //    ResourceUriType.NextPage) : null;
-
             var paginationMetadata = new
             {
                 totalCount = authorsFromRepo.TotalCount,
                 pageSize = authorsFromRepo.PageSize,
                 currentPage = authorsFromRepo.CurrentPage,
-                totalPages = authorsFromRepo.TotalPages,
-                //previousPageLink,
-                //nextPageLink
+                totalPages = authorsFromRepo.TotalPages
             };
 
             Response.Headers.Add("X-Pagination",
@@ -104,8 +87,12 @@ namespace Library.API.Controllers
         }
 
         [HttpGet("{authorId}", Name ="GetAuthor")]
-        public IActionResult GetAuthors(Guid authorId, string fields)
+        public IActionResult GetAuthors(Guid authorId, string fields, 
+            [FromHeader(Name = "Accept")] string mediaType)
         {
+            if (!MediaTypeHeaderValue.TryParse(mediaType, out MediaTypeHeaderValue parsedMediaType))
+                return BadRequest();
+
             if (!_propertyCheckerService.TypeHasProperties<AuthorDto>
                 (fields))
                 return BadRequest();
@@ -115,15 +102,20 @@ namespace Library.API.Controllers
             if (authorFromRepo == null)
                 return NotFound();
 
-            var links = CreateLinksForAuthor(authorId, fields);
+            if (parsedMediaType.MediaType == "application/vnd.marvin.hateoas+json")
+            {
+                var links = CreateLinksForAuthor(authorId, fields);
 
-            var linkedResourceToReturn = 
-                _mapper.Map<AuthorDto>(authorFromRepo).ShapeData(fields) 
-                as IDictionary<string, object>;
+                var linkedResourceToReturn =
+                    _mapper.Map<AuthorDto>(authorFromRepo).ShapeData(fields)
+                    as IDictionary<string, object>;
 
-            linkedResourceToReturn.Add("links", links);
+                linkedResourceToReturn.Add("links", links);
 
-            return Ok(linkedResourceToReturn);
+                return Ok(linkedResourceToReturn);
+            }
+
+            return Ok(_mapper.Map<AuthorDto>(authorFromRepo).ShapeData(fields));
         }
 
         [HttpPost(Name = "CreateAuthor")]

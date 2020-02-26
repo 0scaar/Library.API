@@ -79,8 +79,26 @@ namespace Library.API.Controllers
             Response.Headers.Add("X-Pagination",
                 JsonSerializer.Serialize(paginationMetadata));
 
-            return Ok(_mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo)
-                .ShapeData(authorsResourceParameters.Fields));
+            var links = CreateLinksForAuthors(authorsResourceParameters);
+
+            var shapedAuthors = _mapper.Map<IEnumerable<AuthorDto>>(authorsFromRepo)
+                .ShapeData(authorsResourceParameters.Fields);
+
+            var shapedAuthorWithLinks = shapedAuthors.Select(author =>
+            {
+                var authorAsDictionary = author as IDictionary<string, object>;
+                var authorLink = CreateLinksForAuthor((Guid)authorAsDictionary["Id"], null);
+                authorAsDictionary.Add("links", authorLink);
+                return authorAsDictionary;
+            });
+
+            var linkedCollectionResource = new
+            {
+                value = shapedAuthorWithLinks,
+                links
+            };
+
+            return Ok(linkedCollectionResource);
         }
 
         [HttpGet("{authorId}", Name ="GetAuthor")]
@@ -177,6 +195,7 @@ namespace Library.API.Controllers
                             mainCategory = authorsResourceParameters.MainCategory,
                             searchQuery = authorsResourceParameters.SearchQuery
                         });
+                case ResourceUriType.Current:
                 default:
                     return Url.Link("GetAuthors",
                         new
@@ -214,6 +233,19 @@ namespace Library.API.Controllers
 
             links.Add(
                 new LinkDto(Url.Link("GetCoursesForAuthor", new { authorId }), "courses", "GET"));
+
+            return links;
+        }
+
+        private IEnumerable<LinkDto> CreateLinksForAuthors(AuthorsResourceParameters authorsResourceParameters)
+        {
+            var links = new List<LinkDto>();
+
+            // self
+            links.Add(
+                new LinkDto(CreateAuthorsResourceUri(
+                    authorsResourceParameters, ResourceUriType.Current), 
+                    "self", "GET"));
 
             return links;
         }

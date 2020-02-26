@@ -86,11 +86,18 @@ namespace Library.API.Controllers
             return Ok(linkedCollectionResource);
         }
 
+        [Produces("application/json",
+            "application/vnd.marvin.hateoas+json",
+            "application/vnd.marvin.author.full+json",
+            "application/vnd.marvin.author.full.hateoas+json",
+            "application/vnd.marvin.author.friendly+json",
+            "application/vnd.marvin.author.friendly.hateoas+json")]
         [HttpGet("{authorId}", Name ="GetAuthor")]
         public IActionResult GetAuthors(Guid authorId, string fields, 
             [FromHeader(Name = "Accept")] string mediaType)
         {
-            if (!MediaTypeHeaderValue.TryParse(mediaType, out MediaTypeHeaderValue parsedMediaType))
+            if (!MediaTypeHeaderValue.TryParse(mediaType, 
+                out MediaTypeHeaderValue parsedMediaType))
                 return BadRequest();
 
             if (!_propertyCheckerService.TypeHasProperties<AuthorDto>
@@ -102,20 +109,38 @@ namespace Library.API.Controllers
             if (authorFromRepo == null)
                 return NotFound();
 
-            if (parsedMediaType.MediaType == "application/vnd.marvin.hateoas+json")
+            var includeLinks = parsedMediaType.SubTypeWithoutSuffix
+                .EndsWith("hateoas", StringComparison.InvariantCultureIgnoreCase);
+
+            IEnumerable<LinkDto> links = new List<LinkDto>();
+
+            if (includeLinks)
+                links = CreateLinksForAuthor(authorId, fields);
+
+            var primaryMediaType = includeLinks ?
+                parsedMediaType.SubTypeWithoutSuffix.Substring(0, parsedMediaType.SubTypeWithoutSuffix.Length - 8)
+                : parsedMediaType.SubTypeWithoutSuffix;
+
+            // full author
+            if (primaryMediaType == "vnd.marvin.author.full")
             {
-                var links = CreateLinksForAuthor(authorId, fields);
+                var fullResourceToReturn = _mapper.Map<AuthorFullDto>(authorFromRepo)
+                    .ShapeData(fields) as IDictionary<string, object>;
 
-                var linkedResourceToReturn =
-                    _mapper.Map<AuthorDto>(authorFromRepo).ShapeData(fields)
-                    as IDictionary<string, object>;
+                if (includeLinks)
+                    fullResourceToReturn.Add("links", links);
 
-                linkedResourceToReturn.Add("links", links);
-
-                return Ok(linkedResourceToReturn);
+                return Ok(fullResourceToReturn);
             }
 
-            return Ok(_mapper.Map<AuthorDto>(authorFromRepo).ShapeData(fields));
+            // friendly author
+            var friendlyResourceToReturn = _mapper.Map<AuthorDto>(authorFromRepo)
+                .ShapeData(fields) as IDictionary<string, object>;
+
+            if (includeLinks)
+                friendlyResourceToReturn.Add("links", links);
+
+            return Ok(friendlyResourceToReturn);
         }
 
         [HttpPost(Name = "CreateAuthor")]

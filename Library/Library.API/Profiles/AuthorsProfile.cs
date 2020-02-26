@@ -21,6 +21,8 @@ namespace Library.API.Profiles
                 );
 
             CreateMap<Models.AuthorForCreationDto, Entities.Author>();
+
+            CreateMap<Entities.Author, Models.AuthorFullDto>();
         }
     }
 }

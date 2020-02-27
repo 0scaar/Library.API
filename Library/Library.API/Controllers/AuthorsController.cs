@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Library.API.ResourceParameters;
 using System.Text.Json;
 using Microsoft.Net.Http.Headers;
+using Library.API.ActionConstraints;
 
 namespace Library.API.Controllers
 {
@@ -144,7 +145,37 @@ namespace Library.API.Controllers
         }
 
         [HttpPost(Name = "CreateAuthor")]
+        [RequestHeaderMatchesMediaType("Content-Type",
+            "application/json",
+            "application/vnd.marvin.authorforcreation+json")]
+        [Consumes("application/json",
+            "application/vnd.marvin.authorforcreation+json")]
         public ActionResult<AuthorDto> CreateAuthor(AuthorForCreationDto author)
+        {
+            var authorEntity = _mapper.Map<Entities.Author>(author);
+            _courseLibraryRepository.AddAuthor(authorEntity);
+            _courseLibraryRepository.Save();
+
+            var authorToReturn = _mapper.Map<AuthorDto>(authorEntity);
+
+            var links = CreateLinksForAuthor(authorToReturn.Id, null);
+
+            var linkedResourceToReturn = authorToReturn.ShapeData(null)
+                as IDictionary<string, object>;
+
+            linkedResourceToReturn.Add("links", links);
+
+            // return status code : 201 (Created)
+            return CreatedAtRoute("GetAuthor",
+                new { authorId = linkedResourceToReturn["Id"] },
+                linkedResourceToReturn);
+        }
+
+        [HttpPost(Name = "CreateAuthorWithDateOfDeath")]
+        [RequestHeaderMatchesMediaType("Content-Type",
+            "application/vnd.marvin.authorforcreationwithdateofdeath+json")]
+        [Consumes("application/vnd.marvin.authorforcreationwithdateofdeath+json")]
+        public IActionResult CreateAuthorWithDateOfDeath(AuthorForCreationWithDateOfDeathDto author)
         {
             var authorEntity = _mapper.Map<Entities.Author>(author);
             _courseLibraryRepository.AddAuthor(authorEntity);

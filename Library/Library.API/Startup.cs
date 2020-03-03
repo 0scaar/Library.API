@@ -34,6 +34,7 @@ namespace Library.API
             {
                 // TRUE: if the format is incorrect, Operation Status will be 406
                 setupAction.ReturnHttpNotAcceptable = true;
+                setupAction.CacheProfiles.Add("240SecondsCacheProfile", new CacheProfile() { Duration = 240 });
             })
             // Add AddNewtonsoftJson to the IMvcBuilder. Default returns an XML.
             .AddNewtonsoftJson(setupAction =>

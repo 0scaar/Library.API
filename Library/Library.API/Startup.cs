@@ -124,7 +124,7 @@ namespace Library.API
                 });
             }
 
-            app.UseResponseCaching();
+            //app.UseResponseCaching();
 
             app.UseHttpCacheHeaders();
 
